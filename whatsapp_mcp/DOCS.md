@@ -23,4 +23,4 @@ Files to send go into `/share/whatsapp-mcp/outbox/`. `retention_days` deletes ol
 Risks: messages from anyone can try to trick an agent with send tools into sending (prompt injection), and
 WhatsApp can restrict numbers that use unofficial clients.
 
-Full documentation: https://github.com/jpch/whatsapp-mcp-ha
+Full documentation: https://github.com/rvenancio/whatsapp-mcp-ha
