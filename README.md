@@ -19,9 +19,7 @@ Independent project, not affiliated with WhatsApp or Meta. The tool set and mess
 2. Install **WhatsApp MCP**. The first install builds the image on the device and takes a few minutes.
 3. In **Configuration**, leave **Authentication** on `api_key` (the default) and, optionally, set `auth_token`, the
    read-only token (32+ random printable characters, e.g. `openssl rand -base64 32`). If you leave it empty, the
-   add-on generates one and shows it **once** on its page. To use a Cloudflare Access JWT instead, set
-   `auth_method` to `cloudflare_jwt` and fill in `cf_team_domain` and `cf_access_aud` (see [Connect an MCP client](#connect-an-mcp-client)).
-   `none` turns authentication off and is not recommended. Sending is off by default; see [Sending](#sending).
+   add-on generates one and shows it **once** on its page. `none` turns authentication off and is not recommended. Sending is off by default; see [Sending](#sending).
 4. **Start** the add-on and open **Open Web UI** (or the sidebar entry **WhatsApp MCP**, administrators only).
 5. On your phone: **WhatsApp → Settings → Linked devices → Link a device**, and scan the QR code shown on the page.
    The page shows **Connected** when done. In the add-on the QR code is only on the page, never in the log.
@@ -61,33 +59,6 @@ bearer token decides what the caller may do. Keep both if you expose the hostnam
   "headers": { "Authorization": "Bearer <token>" } } } }
 ```
 
-### `cloudflare_jwt`
-
-The add-on accepts only a Cloudflare Access JWT for the application identified by `cf_access_aud`, signed by
-`https://<cf_team_domain>/cdn-cgi/access/certs` (RS256). It reads, in order:
-
-1. `Cf-Access-Jwt-Assertion`, which Cloudflare adds when this add-on is the Access application. An MCP portal
-   with Managed OAuth does this too: the client holds an opaque token, and Access puts the JWT on the request
-   the origin sees.
-2. `Cf-Access-Token`, the same JWT when a portal or another MCP server forwards it.
-3. The `CF_Authorization` cookie.
-4. `Authorization: Bearer`, only when that value is itself this Access JWT. Any other bearer, including
-   `auth_token`, is rejected.
-
-Set `cf_access_aud` to the AUD of the application that issued the JWT (this add-on, or the portal application
-if that is the token being forwarded). Non-browser clients in front of Access use a
-[service token](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/):
-the client sends `CF-Access-Client-Id` and `CF-Access-Client-Secret` to Cloudflare, and Cloudflare puts the JWT on
-the request the add-on sees. Those two secrets are not checked here.
-
-```json
-{ "mcpServers": { "whatsapp": { "type": "http", "url": "https://<your-hostname>/mcp",
-  "headers": { "CF-Access-Client-Id": "<id>", "CF-Access-Client-Secret": "<secret>" } } } }
-```
-
-With `enable_send` on, **every** identity that Access policy allows can call the send tools (there is no second
-token). Keep the policy to the one client that should send, and keep `allowed_recipients` tight.
-
 ### `none` (not recommended)
 
 `/mcp` accepts every caller. Use it only when port 8120 cannot be reached by anything you do not trust (it is not
@@ -122,12 +93,10 @@ voice notes must already be Ogg Opus (no ffmpeg in the image); passkey pairing i
 
 | Option | Default | |
 |---|---|---|
-| `auth_method` | `api_key` | `api_key` (bearer tokens), `cloudflare_jwt` (Cloudflare Access JWT) or `none` (not recommended) |
-| `cf_team_domain` | empty | Cloudflare Access team name or `<team>.cloudflareaccess.com`; required for `cloudflare_jwt` |
-| `cf_access_aud` | empty | Access application AUD tag; required for `cloudflare_jwt` |
+| `auth_method` | `api_key` | `api_key` (bearer tokens) or `none` (not recommended) |
 | `auth_token` | empty | read-only bearer token, used only when `auth_method` is `api_key`; empty = generated, shown once on the add-on page |
 | `send_token` | empty | only for `api_key`: the only token that gets the send tools (when `enable_send` is on); must differ from `auth_token`; empty = generated, shown once on the add-on page |
-| `enable_send` | `false` | `true` adds the send tools. With `api_key` only `send_token` can call them. With `cloudflare_jwt` or `none`, every accepted caller can |
+| `enable_send` | `false` | `true` adds the send tools. With `api_key` only `send_token` can call them. With `none`, every caller can |
 | `send_rate_per_minute` | `6` | sends per minute, all clients together |
 | `send_daily_limit` | `50` | sends per rolling 24 hours |
 | `allowed_recipients` | empty (no sends) | phone numbers (country code, digits) or JIDs the send tools may write to |
@@ -168,14 +137,14 @@ docker logs -f whatsapp-mcp   # no pairing page in plain Docker: scan the QR cod
 Use `aarch64-base` on ARM. Without `WA_MCP_TOKEN` a token is generated into `data/auth_token`. Other variables:
 `WA_MCP_ENABLE_SEND`, `WA_MCP_SEND_TOKEN` (generated into `data/send_token` when sending is on and it is unset), `WA_MCP_SEND_RATE_PER_MINUTE`, `WA_MCP_SEND_DAILY_LIMIT`, `WA_MCP_ALLOW_MEDIA_DOWNLOAD`,
 `WA_MCP_MAX_MEDIA_MB`, `WA_MCP_LOG_LEVEL`, `WA_MCP_ALLOWED_RECIPIENTS` (comma-separated), `WA_MCP_RETENTION_DAYS`,
-`WA_MCP_AUTH_METHOD` (`api_key`, `cloudflare_jwt` or `none`), `WA_MCP_CF_TEAM_DOMAIN`, `WA_MCP_CF_ACCESS_AUD`. The pairing page is off in plain Docker (it has no login of its own).
+`WA_MCP_AUTH_METHOD` (`api_key` or `none`). The pairing page is off in plain Docker (it has no login of its own).
 To re-pair after an unlink, run `docker restart whatsapp-mcp` and scan the new code from the log.
 
 ## Security
 
 See [SECURITY.md](SECURITY.md) and [docs/security-review.md](docs/security-review.md). In short: `/mcp` requires an
-API key unless you explicitly choose a Cloudflare Access JWT or turn authentication off, read-only unless you enable
-sending, send tools only for the send token (API key) or for identities your Access policy allows (Cloudflare JWT),
+API key unless you turn authentication off, read-only unless you enable
+sending, send tools only for the send token,
 sends limited to `allowed_recipients` and rate limited, file sending confined to the outbox,
 received file names sanitised and never overwriting files, media download off by default, no other routes on the
 exposed port, pairing page only through Home Assistant ingress for administrators, message contents and tokens never

@@ -73,11 +73,6 @@ func run(level *slog.LevelVar) error {
 	switch cfg.AuthMethod {
 	case AuthMethodNone:
 		log.Warn("auth_method is none: /mcp has no authentication. Anyone who can reach it can use this WhatsApp account. This is not recommended")
-	case AuthMethodCloudflareJWT:
-		log.Info("authentication is a Cloudflare Access JWT", "team", cfg.CFTeamDomain)
-		if cfg.SendActive() {
-			log.Warn("send tools are on for every identity the Cloudflare Access policy allows; keep that policy tight")
-		}
 	}
 	if !cfg.usesAPIKey() && (cfg.AuthToken != "" || cfg.SendToken != "") {
 		log.Info("auth_token and send_token are ignored because auth_method is not api_key")
@@ -117,8 +112,6 @@ func run(level *slog.LevelVar) error {
 	switch cfg.AuthMethod {
 	case AuthMethodNone:
 		auth.UseNone(cfg.SendActive())
-	case AuthMethodCloudflareJWT:
-		auth.UseCloudflare(NewCFAccessVerifier(cfg.CFTeamDomain, cfg.CFAccessAUD), cfg.SendActive())
 	default:
 		if cfg.SendActive() {
 			auth.SetSendToken(cfg.SendToken)

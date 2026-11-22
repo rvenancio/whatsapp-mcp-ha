@@ -1,7 +1,7 @@
 name: WhatsApp MCP
-version: "0.3.0"
+version: "0.3.1"
 slug: whatsapp_mcp
-description: Your personal WhatsApp account, linked as a device like WhatsApp Web, as an MCP server over streamable HTTP. Authenticate with an API key (default), a Cloudflare Access JWT, or none (not recommended).
+description: Your personal WhatsApp account, linked as a device like WhatsApp Web, as an MCP server over streamable HTTP with bearer tokens (read-only by default).
 url: https://github.com/jpch/whatsapp-mcp-ha
 arch:
   - aarch64
@@ -38,9 +38,7 @@ options:
   retention_days: 0
   log_level: info
 schema:
-  auth_method: list(none|api_key|cloudflare_jwt)
-  cf_team_domain: str?
-  cf_access_aud: str?
+  auth_method: list(none|api_key)
   auth_token: password?
   send_token: password?
   enable_send: bool

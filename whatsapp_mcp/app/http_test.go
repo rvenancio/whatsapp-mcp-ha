@@ -146,7 +146,7 @@ func TestRoutesAndAuth(t *testing.T) {
 	}
 }
 
-func TestAuthMethodNoneAndCloudflareJWT(t *testing.T) {
+func TestAuthMethodNone(t *testing.T) {
 	read := NewMCPServer(&Tools{cfg: testConfig(t), store: testStore(t), wa: &fakeWA{}, sends: NewSendLimiter(6, 50)}, false)
 	none := NewAuthenticator("ignored", quietLog())
 	none.UseNone(false)
@@ -159,63 +159,6 @@ func TestAuthMethodNoneAndCloudflareJWT(t *testing.T) {
 	resp.Body.Close()
 	if resp.StatusCode == 401 || resp.StatusCode == 403 {
 		t.Fatalf("none mode rejected a caller: %d", resp.StatusCode)
-	}
-
-	key := testRSA(t)
-	v, aud := accessVerifier(t, jwksOf(&key.PublicKey, "kid-1"))
-	cf := NewAuthenticator("", quietLog())
-	cf.UseCloudflare(v, false)
-	h := cf.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }))
-	tok := signAccessJWT(t, key, "kid-1", "", goodClaims(aud))
-	req := httptest.NewRequest("POST", "/mcp", nil)
-	req.RemoteAddr = "10.0.0.8:9"
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 401 {
-		t.Fatalf("missing jwt: %d", w.Code)
-	}
-	req = httptest.NewRequest("POST", "/mcp", nil)
-	req.RemoteAddr = "10.0.0.8:9"
-	req.Header.Set("Cf-Access-Jwt-Assertion", tok)
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 204 {
-		t.Fatalf("valid jwt: %d", w.Code)
-	}
-	req = httptest.NewRequest("POST", "/mcp", nil)
-	req.RemoteAddr = "10.0.0.9:9"
-	req.Header.Set("Cf-Access-Token", tok)
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 204 {
-		t.Fatalf("portal Cf-Access-Token: %d", w.Code)
-	}
-	req = httptest.NewRequest("POST", "/mcp", nil)
-	req.RemoteAddr = "10.0.0.10:9"
-	req.Header.Set("Authorization", "Bearer "+tok)
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 204 {
-		t.Fatalf("bearer access jwt: %d", w.Code)
-	}
-	req = httptest.NewRequest("POST", "/mcp", nil)
-	req.RemoteAddr = "10.0.0.11:9"
-	req.Header.Set("Authorization", "Bearer not-the-access-jwt")
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != 401 {
-		t.Fatalf("non-jwt bearer: %d", w.Code)
-	}
-	if cf.RoleFrom(req.Header) != RoleNone {
-		t.Fatal("non-jwt bearer should not authenticate")
-	}
-	req.Header.Set("Cf-Access-Jwt-Assertion", tok)
-	if cf.RoleFrom(req.Header) != RoleRead {
-		t.Fatal("jwt without send should be read-only")
-	}
-	cf.UseCloudflare(v, true)
-	if cf.RoleFrom(req.Header) != RoleSend {
-		t.Fatal("jwt with send tools on should be allowed to send")
 	}
 }
 

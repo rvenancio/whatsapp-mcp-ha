@@ -1,19 +1,8 @@
 # Security reviews
 
-## 0.3.0 (proposed)
+## 0.3.1
 
-Notes for review of the `auth_method` change. Not a completed independent review.
-
-`api_key` is unchanged: constant-time bearer comparison, separate read and send tokens, failed attempts throttled.
-`cloudflare_jwt` replaces that check with RS256 verification of the Access JWT (`alg` other than RS256, including
-`none`, is rejected before the signature is considered). The certificate URL is derived only from a single DNS
-label plus `.cloudflareaccess.com`; redirects are not followed. The token, email and other identity claims are not
-logged. A failed JWT counts toward the same per-caller failure limit. `Cf-Access-Token` and `Authorization: Bearer`
-are accepted only when the value verifies as that same Access JWT; a non-JWT bearer is rejected and does not
-select the algorithm. With `enable_send` on there is no second
-credential: every identity the Access policy allows can send, which the log warns about. `none` skips
-authentication entirely and logs a warning; it is off unless the configuration says so. `/healthz` stays
-unauthenticated in every mode. `http.CrossOriginProtection` still wraps `/mcp`.
+`cloudflare_jwt` was removed. `/mcp` again authenticates with the bearer tokens, or with nothing when `auth_method` is `none`.
 
 ## 0.2.0
 

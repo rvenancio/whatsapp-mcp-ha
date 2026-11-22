@@ -1,13 +1,7 @@
 configuration:
   auth_method:
     name: Authentication
-    description: "How callers of /mcp prove who they are. api_key (default, recommended): bearer tokens. cloudflare_jwt: a Cloudflare Access JWT (Cf-Access-Jwt-Assertion, Cf-Access-Token from an MCP portal, or Authorization: Bearer when that value is the Access JWT). Needs cf_team_domain and cf_access_aud. none: no authentication at all — not recommended, only if nothing untrusted can reach port 8120."
-  cf_team_domain:
-    name: Cloudflare Access team
-    description: "Team name or <team>.cloudflareaccess.com. Required when authentication is cloudflare_jwt. The add-on loads signing keys only from https://<team>.cloudflareaccess.com/cdn-cgi/access/certs."
-  cf_access_aud:
-    name: Cloudflare Access audience (AUD)
-    description: "Application Audience (AUD) tag of the Access application in front of this add-on. Required when authentication is cloudflare_jwt. Zero Trust → Access controls → Applications → your application → Additional settings."
+    description: "How callers of /mcp prove who they are. api_key (default, recommended): bearer tokens. none: no authentication at all — not recommended, only if nothing untrusted can reach port 8120."
   auth_token:
     name: Read-only token
     description: "Bearer token for the read tools only ('Authorization: Bearer <token>'). At least 32 printable characters without spaces. Leave empty to use a generated token, shown once on the add-on page. Changing it means updating every client that stores it."
