@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Add-on icon (`icon.png`).
+
 ## 0.3.1
 
 - Removed `cloudflare_jwt` and the `cf_team_domain` / `cf_access_aud` options. Authentication is `api_key` (default) or `none`. An installation that still has those options saved must clear them before updating.

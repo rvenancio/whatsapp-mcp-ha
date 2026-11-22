@@ -1,5 +1,5 @@
 name: WhatsApp MCP
-version: "0.3.1"
+version: "0.3.2"
 slug: whatsapp_mcp
 description: Your personal WhatsApp account, linked as a device like WhatsApp Web, as an MCP server over streamable HTTP with bearer tokens (read-only by default).
 url: https://github.com/jpch/whatsapp-mcp-ha
