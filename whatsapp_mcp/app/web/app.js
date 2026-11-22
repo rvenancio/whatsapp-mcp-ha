@@ -31,9 +31,6 @@ async function refresh() {
     if (method === "none") {
       $("authmethod").textContent = "none (not recommended)";
       $("authheader").textContent = "none";
-    } else if (method === "cloudflare_jwt") {
-      $("authmethod").textContent = "Cloudflare Access JWT";
-      $("authheader").textContent = "Cf-Access-Jwt-Assertion (added by Cloudflare Access)";
     } else {
       $("authmethod").textContent = "API key";
       $("authheader").textContent = "Authorization: Bearer <token> (auth_token: read; send_token: read and send)";

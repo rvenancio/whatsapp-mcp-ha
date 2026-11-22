@@ -38,9 +38,8 @@ type Authenticator struct {
 	wantSend   atomic.Pointer[[32]byte] // nil when sending is not active
 	inactive   atomic.Pointer[[32]byte] // send token while enable_send is off; nil if none
 	log        *slog.Logger
-	mode       int // 0 api_key, 1 none, 2 cloudflare jwt. Zero keeps bearer-token behaviour.
-	cf         *CFAccessVerifier
-	sendOnAuth bool // none / cloudflare: a successful check may call the send tools
+	mode       int  // 0 api_key, 1 none. Zero keeps bearer-token behaviour.
+	sendOnAuth bool // none: a successful check may call the send tools
 
 	mu         sync.Mutex
 	failures   map[string]*failEntry
@@ -64,21 +63,12 @@ func NewAuthenticator(token string, log *slog.Logger) *Authenticator {
 const (
 	authModeAPIKey = iota
 	authModeNone
-	authModeCloudflare
 )
 
 // UseNone turns authentication off. sendTools is true when enable_send is on, so every caller
 // gets the send tools. Not recommended.
 func (a *Authenticator) UseNone(sendTools bool) {
 	a.mode = authModeNone
-	a.sendOnAuth = sendTools
-}
-
-// UseCloudflare accepts a Cloudflare Access JWT instead of bearer tokens.
-// sendTools is true when enable_send is on: every identity the Access policy allows can send.
-func (a *Authenticator) UseCloudflare(v *CFAccessVerifier, sendTools bool) {
-	a.mode = authModeCloudflare
-	a.cf = v
 	a.sendOnAuth = sendTools
 }
 
@@ -143,19 +133,9 @@ func (a *Authenticator) Role(header string) Role {
 }
 
 // RoleFrom is Role for an HTTP request. api_key reads Authorization. none accepts everyone.
-// cloudflare_jwt reads the Access JWT from Cf-Access-Jwt-Assertion, Cf-Access-Token (MCP portal),
-// the CF_Authorization cookie, or Authorization: Bearer when that value is the Access JWT.
 func (a *Authenticator) RoleFrom(h http.Header) Role {
 	switch a.mode {
 	case authModeNone:
-		if a.sendOnAuth {
-			return RoleSend
-		}
-		return RoleRead
-	case authModeCloudflare:
-		if a.cf == nil || a.cf.Verify(accessJWT(h)) != nil {
-			return RoleNone
-		}
 		if a.sendOnAuth {
 			return RoleSend
 		}
@@ -236,9 +216,6 @@ func (a *Authenticator) logFailure() {
 		// No client address: behind a tunnel it is the visitor's IP, which is personal data.
 		// The JWT and bearer token are not logged either.
 		msg := "rejected MCP request without a valid token"
-		if a.mode == authModeCloudflare {
-			msg = "rejected MCP request without a valid Cloudflare Access JWT"
-		}
 		a.log.Warn(msg, "suppressed_since_last", suppressed)
 	}
 }

@@ -209,19 +209,7 @@ func TestAuthMethodSelection(t *testing.T) {
 		t.Fatal("none mode wrote an auth token")
 	}
 	if _, err := LoadConfig(missing, envMap(map[string]string{"WA_MCP_AUTH_METHOD": "cloudflare_jwt"})); err == nil {
-		t.Fatal("cloudflare_jwt without a team was accepted")
-	}
-	if _, err := LoadConfig(missing, envMap(map[string]string{
-		"WA_MCP_AUTH_METHOD": "cloudflare_jwt", "WA_MCP_CF_TEAM_DOMAIN": "https://evil.example/certs", "WA_MCP_CF_ACCESS_AUD": "abc",
-	})); err == nil {
-		t.Fatal("arbitrary cert host accepted")
-	}
-	cfg, err = LoadConfig(missing, envMap(map[string]string{
-		"WA_MCP_AUTH_METHOD": "cloudflare-jwt", "WA_MCP_CF_TEAM_DOMAIN": "MyTeam", "WA_MCP_CF_ACCESS_AUD": "aud-tag",
-		"WA_MCP_ENABLE_SEND": "true", "WA_MCP_TOKEN": "short",
-	}))
-	if err != nil || cfg.AuthMethod != AuthMethodCloudflareJWT || cfg.CFTeamDomain != "myteam.cloudflareaccess.com" || cfg.CFAccessAUD != "aud-tag" || !cfg.SendActive() {
-		t.Fatalf("cloudflare jwt config: %v %+v", err, cfg)
+		t.Fatal("removed cloudflare_jwt method was accepted")
 	}
 	if _, err := LoadConfig(missing, envMap(map[string]string{"WA_MCP_AUTH_METHOD": "basic"})); err == nil {
 		t.Fatal("unknown auth_method accepted")
