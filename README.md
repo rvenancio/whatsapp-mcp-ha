@@ -15,7 +15,7 @@ Independent project, not affiliated with WhatsApp or Meta. The tool set and mess
 
 ## Install (Home Assistant OS, aarch64 or amd64)
 
-1. **Settings → Add-ons → Add-on store → ⋮ → Repositories**, add `https://github.com/jpch/whatsapp-mcp-ha`.
+1. **Settings → Add-ons → Add-on store → ⋮ → Repositories**, add `https://github.com/rvenancio/whatsapp-mcp-ha` exactly, with no `.git` and no trailing slash.
 2. Install **WhatsApp MCP**. The first install builds the image on the device and takes a few minutes.
 3. In **Configuration**, leave **Authentication** on `api_key` (the default) and, optionally, set `auth_token`, the
    read-only token (32+ random printable characters, e.g. `openssl rand -base64 32`). If you leave it empty, the
@@ -38,11 +38,10 @@ device** on the page logs out and starts a new pairing.
 | Transport | streamable HTTP (stateless, JSON responses) |
 | Path | `/mcp` |
 | Port | `8120` (container port) |
-| From other add-ons (e.g. cloudflared) | `http://2b052fb0-whatsapp-mcp:8120/mcp` |
+| From other add-ons (e.g. cloudflared) | Internal URL on the add-on page. For this repository URL it is `http://910e8e2f-whatsapp-mcp:8120/mcp` |
 | Header | depends on `auth_method` (below) |
 
-The hostname is `<repository hash>-whatsapp-mcp`; the hash is `2b052fb0` when the repository was added as
-`https://github.com/jpch/whatsapp-mcp-ha`. The add-on page shows the exact internal URL.
+The name is not fixed. Home Assistant takes the first 8 characters of the SHA-1 of the repository URL **exactly as you added it**, then appends `-whatsapp-mcp`. The URL above, with no `.git` and no trailing slash, hashes to `910e8e2f`. Adding `.git` produces a different name. Copy **Internal URL** from the add-on page (**Open Web UI**). Other add-ons can resolve it; a browser cannot.
 
 The port is **not published on the host** by default. To use it from the LAN, set a host port under
 **Configuration → Network**. To use it from outside, put a tunnel in front (e.g. a Cloudflare Tunnel with the
@@ -124,7 +123,7 @@ the file name as `media_path`. Paths outside that folder, `..` and symlinks poin
 ## Plain Docker (e.g. a NAS)
 
 ```sh
-git clone https://github.com/jpch/whatsapp-mcp-ha && cd whatsapp-mcp-ha
+git clone https://github.com/rvenancio/whatsapp-mcp-ha && cd whatsapp-mcp-ha
 docker build -t whatsapp-mcp --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.24 whatsapp_mcp
 docker run -d --name whatsapp-mcp --restart unless-stopped \
   -p 8120:8120 \
